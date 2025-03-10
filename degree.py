@@ -9,11 +9,14 @@ plt.rcParams["font.family"] = "sans-serif"
 plt.rcParams["savefig.dpi"] = 300
 
 import itertools
+import math
 import networkx as nx
 import time
 
 from args import args
 from util import *
+
+NUM = 1000000
 
 if __name__ == "__main__":
   graphs = load_data(args.dataset)
@@ -184,10 +187,12 @@ if __name__ == "__main__":
       poi_plist = [poisson(k, D, maxlim) for k in range(0, N)]
       poi_plist = [val / sum(poi_plist) for val in poi_plist]
       start_time = time.time()
+      asampler = Alias(poi_plist)
       while sN > 0 and sM > 0:
         # nn = min(sN, MAXD + 1)
         # d = poisson_sampler(nn, D)
-        d = poisson_fast_sampler(poi_plist, 1)
+        # d = poisson_fast_sampler(poi_plist, 1)
+        d = asampler.sample()
         if d > sN:
           d = sN
         subs.append((d + 1, d))
@@ -220,6 +225,8 @@ if __name__ == "__main__":
       edges = []
       if len(subs) > 1:
         for i, sub in enumerate(subs):
+          if i == 0:
+            continue
           # ========================================================================
           # pick under MAXD
           # goi = [poisson(x + 1, D, maxlim) if x < MAXD else 0 for x in entries[i]]
@@ -242,28 +249,29 @@ if __name__ == "__main__":
           ll = random_sampler(len(goi), goi)
 
           # =======================================================================
-          nlist = []
-          plist = []
-          for subid, elist in enumerate(entries):
-            if subid == i:
-              continue
-            psub = len(elist) / sumN
-            sublist = []
-            for eid, edeg in enumerate(elist):
-              # pick under MAXD
-              # p = psub * (poisson(edeg + 1, D, maxlim) if edeg < MAXD else 0)
-              # pick without limit
-              p = psub * (poisson(edeg + 1, D, maxlim))
-              nlist.append((subid, eid))
-              sublist.append(p)
-            # pick without limit
-            # sublist[0] = 0 if sum(sublist[1:]) != 0 else sublist[0]
-            plist.extend(sublist)
-          sumt = sum(plist)
-          plist = [p / sumt for p in plist]
+          
+          j = r.randint(0, i - 1)
+          # ========================================================================
+          # pick under MAXD
+          # goi = [poisson(x + 1, D, maxlim) if x < MAXD else 0 for x in entries[i]]
+          # pick without limit
+          goj = [poisson(x + 1, D, maxlim) for x in entries[j]]
+          if sum(goj) == 0:
+            continue
+          # pick without limit
+          # goi[0] = 0 if sum(goi[1:]) != 0 else goi[0]
+          goj = [val / sum(goj) for val in goj]
+          # ========================================================================
+          # pick without limit
+          # goi = [poisson(x + 1, D) for x in entries[i]]
+          # if sum(goi) == 0:
+          #   continue
+          # goi[0] = 0
+          # goi = [val / sum(goi) for val in goi]
+          # ========================================================================
 
-          v = random_sampler(len(nlist), p=plist)
-          v, rr = nlist[v][0], nlist[v][1]
+          rr = random_sampler(len(goj), goj)
+
           # =======================================================================
           # v = random_sampler(len(all_plist[i]), p=all_plist[i])
           # gov = [poisson(x + 1, D) if x < MAXD else 0 for x in entries[v]]
@@ -274,8 +282,8 @@ if __name__ == "__main__":
           # rr = random_sampler(len(gov), gov)
           # =======================================================================
           entries[i][ll] += 1
-          entries[v][rr] += 1
-          edges.append(((i, ll), (v, rr)))
+          entries[j][rr] += 1
+          edges.append(((i, ll), (j, rr)))
           if len(edges) == sM:
             break
       end_time = time.time()
@@ -364,7 +372,8 @@ if __name__ == "__main__":
       # end_time = time.time()
       # times += end_time - start_time
 
-      while res_edges > 0:
+      cnt = res_edges
+      while cnt > 0 and res_edges > 0:
         # print(entries)
         # ====================================================================
         # inner update
@@ -386,14 +395,21 @@ if __name__ == "__main__":
         # ====================================================================
         sumt = sum(plist)
         plist = [p / sumt for p in plist]
+        asampler = Alias(plist)
 
         # V2 of picking
         eset = set()
         for _ in range(res_edges):
-          u, v = random_sampler(len(nlist), p=plist, size=2, replace=False)
+          # u, v = random_sampler(len(nlist), p=plist, size=2, replace=False)
+          while True:
+            u = asampler.sample()
+            v = asampler.sample()
+            if u != v:
+              break
           u, v = min(u, v), max(u, v)
           eset.add((u, v))
         res_edges -= len(eset)
+        cnt = min(cnt // 2, res_edges // 2)
         
         while len(eset) != 0:
           u, v = eset.pop()
@@ -424,15 +440,24 @@ if __name__ == "__main__":
   # cnt = max(len(deg_ori), len(deg_ea), len(deg_ba), len(deg_MM), len(deg_kro), len(deg_ours))
   # cnt = max(len(deg_ori), len(deg_ea), len(deg_ba), len(deg_wr), len(deg_kro), len(deg_ours))
   # cnt = max(len(deg_ori), len(deg_ea), len(deg_ba), len(deg_kro), len(deg_ours))
+  # deg_ori = [math.log2(x) for x in deg_ori]
   deg_ori = np.concatenate((deg_ori, np.array([0 for _ in range(cnt - len(deg_ori))])))
+  # deg_ea = [math.log2(x) for x in deg_ea]
   deg_ea = np.concatenate((deg_ea, np.array([0 for _ in range(cnt - len(deg_ea))])))
+  # deg_ba = [math.log2(x) for x in deg_ba]
   deg_ba = np.concatenate((deg_ba, np.array([0 for _ in range(cnt - len(deg_ba))])))
+  # deg_wr = [math.log2(x) for x in deg_wr]
   deg_wr = np.concatenate((deg_wr, np.array([0 for _ in range(cnt - len(deg_wr))])))
+  # deg_MM = [math.log2(x) for x in deg_MM]
   deg_MM = np.concatenate((deg_MM, np.array([0 for _ in range(cnt - len(deg_MM))])))
+  # deg_kro = [math.log2(x) for x in deg_kro]
   deg_kro = np.concatenate((deg_kro, np.array([0 for _ in range(cnt - len(deg_kro))])))
+  # deg_ours = [math.log2(x) for x in deg_ours]
   deg_ours = np.concatenate((deg_ours, np.array([0 for _ in range(cnt - len(deg_ours))])))
-  PRUNE = min(20, cnt)
+  # PRUNE = min(20, cnt)
+  PRUNE = cnt
   x = np.arange(cnt, step=1)[:PRUNE]
+  x = [math.log2(i + 2) for i in x]
   ax.plot(x, deg_ori[:PRUNE], label="real", marker='x', color="#000000")
   ax.plot(x, deg_ea[:PRUNE], label="ER", marker='s', color="#557AA4")
   ax.plot(x, deg_ba[:PRUNE], label="BA", marker='^', color="#86A0BE")
@@ -441,10 +466,10 @@ if __name__ == "__main__":
   ax.plot(x, deg_kro[:PRUNE], label="Kronecker", marker=',', color="#F7DEDB")
   ax.plot(x, deg_ours[:PRUNE], label="Ours", marker='o', color="#B63D3D")
   
-  # ax.set_title(args.dataset)
+  ax.set_title(args.dataset)
   ax.legend(ncol=7, bbox_to_anchor=(0.8, 1.3), frameon=False)
-  ax.set_xticks([i for i in range(0, PRUNE, 5)])
-  ax.set_xlabel("Degree")
+  ax.set_xticks([i for i in range(0, int(x[-1]), 1)])
+  ax.set_xlabel("Degree (log)")
   ax.set_ylabel("Avg. Count")
   fig.subplots_adjust(left=0.5, right=0.7, top=0.5)
 

@@ -15,6 +15,8 @@ import time
 from args import args
 from util import *
 
+NUM = 1000000
+
 if __name__ == "__main__":
   graphs = load_data(args.dataset)
   deg = 0
@@ -22,126 +24,75 @@ if __name__ == "__main__":
   orbits = 0
   ocnt = 0
   sparse = 0
-  print(len(graphs))
-  # draw(graphs, args.dataset, "ori")
+  for graph in graphs:
+    print("({}, {}, {})".format(len(graph.nodes()), len(graph.edges()), max(graph.degree(), key=lambda x : x[1])[1]))
+
+  # chatGPT
+  import random
+  # def gpt_generate_graph(N, M, d):
+  #   edges = set()
+  #   degrees = [0] * N
+    
+  #   while len(edges) < M:
+  #       u, v = random.sample(range(N), 2)
+  #       if u > v:
+  #           u, v = v, u
+        
+  #       if degrees[u] < d and degrees[v] < d and (u, v) not in edges:
+  #           edges.add((u, v))
+  #           degrees[u] += 1
+  #           degrees[v] += 1
+    
+  #   return list(edges)
+  # gpt_list = []
   # for graph in graphs:
-  #   nn = 0
-  #   for val in nx.degree(graph):
-  #     nn += val[1]
-  #   deg += nn / len(graph.nodes())
-  #   clus += nx.average_clustering(graph)
-  #   sparse += (2 * len(graph.edges())) / (len(graph.nodes()) * (len(graph.nodes()) - 1))
-  #   try:
-  #     nn = orca(graph)
-  #     orbits += np.mean(np.sum(nn, axis=0) / len(graph.nodes()))
-  #     ocnt += 1
-  #   except:
-  #     print("oops")
-  # deg = deg / len(graphs)
-  # clus = clus / len(graphs)
-  # sparse = sparse / len(graphs)
-  # orbits = orbits / ocnt
-  # print(deg)
-  # print(clus)
-  # print(orbits)
-  # print(sparse)
-  # input()
+  #   gpt_list.append(gpt_generate_graph(len(graph.nodes()), len(graph.edges()), max(graph.degree(), key=lambda x : x[1])[1]))
+  # if len(gpt_list) != 0:
+  #   gpt_graph = []
+  #   for edges in gpt_list:
+  #     graph = nx.Graph()
+  #     graph.add_edges_from(edges, to_undirected=True)
+  #     gpt_graph.append(graph)
+  #   eval(graphs, gpt_graph)
+  #   del gpt_graph
 
-  if "EA" in methods:
-    print("EA")
-    GEA = []
-    times = 0
-    for graph in tqdm(graphs):
-      start_time = time.time()
-      N, M = len(graph.nodes()), len(graph.edges())
-      # p = 2 * log(N) / (N - 1)
-      p = 2 * M / (N * (N - 1))
-      G = nx.gnp_random_graph(N, p)
-      end_time = time.time()
-      times += end_time - start_time
-      GEA.append(G)
-    draw(GEA, args.dataset, "EA")
-    eval(graphs, GEA)
-    print("total times: %f" % (times / len(graphs)))
-    del GEA
-
-  if "BA" in methods:
-    print("BA")
-    GBA = []
-    times = 0
-    for graph in tqdm(graphs):
-      start_time = time.time()
-      N, M = len(graph.nodes()), len(graph.edges())
-      # p = 2 * log(N) / (N - 1)
-      D = max(1, int(2 * M / N))
-      G = nx.barabasi_albert_graph(N, D)
-      end_time = time.time()
-      times += end_time - start_time
-      GBA.append(G)
-    draw(GBA, args.dataset, "BA")
-    eval(graphs, GBA)
-    print("total times: %f" % (times / len(graphs)))
-    del GBA
-
-  if "WR" in methods:
-    print("WR")
-    GWR = []
-    times = 0
-    for graph in tqdm(graphs):
-      start_time = time.time()
-      N, M = len(graph.nodes()), len(graph.edges())
-      D = max(1, int(2 * M / N))
-      p = 2 * M / (N * (N - 1))
-      G = nx.watts_strogatz_graph(N, D, p)
-      end_time = time.time()
-      times += end_time - start_time
-      GWR.append(G)
-    draw(GWR, args.dataset, "WR")
-    eval(graphs, GWR)
-    print("total times: %f" % (times / len(graphs)))
-    del GWR
-
-  if "MMSB" in methods:
-    print("MMSB")
-    GMM = []
-    times = 0
-    for graph in tqdm(graphs):
-      N, M = len(graph.nodes()), len(graph.edges())
-      D = max(1, int(2 * M / N))
-      C = max(1, int(N / D))
-      p = 2 * M / (N * (N - 1))
-      mm_gen = MMSB(N, C, p)
-      start_time = time.time()
-      G = mm_gen.generate_graph()
-      end_time = time.time()
-      times += end_time - start_time
-      GMM.append(G)
-    draw(GMM, args.dataset, "MM")
-    eval(graphs, GMM)
-    print("total times: %f" % (times / len(graphs)))
-    del GMM
-
-  if "Kronecker" in methods:
-    print("Kronecker")
-    GKro = []
-    times = 0
-    for graph in tqdm(graphs):
-      start_time = time.time()
-      N, M = len(graph.nodes()), len(graph.edges())
-      D = max(1, int(2 * M / N))
-      # print(N, D)
-      # input()
-      G = kronecker(N, D)
-      end_time = time.time()
-      times += end_time - start_time
-      GKro.append(G)
-      # nx.draw(G)
-      # plt.show()
-      # plt.close()
-    draw(GKro, args.dataset, "Kronecker")
-    eval(graphs, GKro)
-    print("total times: %f" % (times / len(graphs)))
-    del GKro
+  # DeepSeek
+  def ds_generate_graph(N, M, d):
+    if M > N * (N - 1) / 2:
+        raise ValueError()
+    
+    degrees = [0] * N
+    edges = set()
+    
+    while len(edges) < M:
+        u = random.randint(0, N-1)
+        v = random.randint(0, N-1)
+        
+        if u == v:
+            continue
+        
+        if (u, v) in edges or (v, u) in edges:
+            continue 
+        
+        if degrees[u] >= d or degrees[v] >= d:
+            continue
+        
+        edges.add((u, v))
+        degrees[u] += 1
+        degrees[v] += 1
+    
+    return list(edges)
+  ds_list = []
+  for graph in graphs:
+    ds_list.append(ds_generate_graph(len(graph.nodes()), len(graph.edges()), max(graph.degree(), key=lambda x : x[1])[1]))
+  if len(ds_list) != 0:
+    ds_graph = []
+    for edges in ds_list:
+      graph = nx.Graph()
+      graph.add_edges_from(edges, to_undirected=True)
+      ds_graph.append(graph)
+    eval(graphs, ds_graph)
+    del ds_graph
 
   if "Ours" in methods:
     print("Ours")
@@ -177,10 +128,12 @@ if __name__ == "__main__":
       poi_plist = [poisson(k, D, maxlim) for k in range(0, N)]
       poi_plist = [val / sum(poi_plist) for val in poi_plist]
       start_time = time.time()
+      asampler = Alias(poi_plist)
       while sN > 0 and sM > 0:
         # nn = min(sN, MAXD + 1)
         # d = poisson_sampler(nn, D)
-        d = poisson_fast_sampler(poi_plist, 1)
+        # d = poisson_fast_sampler(poi_plist, 1)
+        d = asampler.sample()
         if d > sN:
           d = sN
         subs.append((d + 1, d))
@@ -196,7 +149,7 @@ if __name__ == "__main__":
 
       # 3. build edges between nodes
       # 3.0 prepare
-      # start_time = time.time()
+      start_time = time.time()
       entries = [[sub[1]] + [1 for _ in range(sub[1])] for sub in subs]
 
       # TODO: really need?
@@ -213,6 +166,8 @@ if __name__ == "__main__":
       edges = []
       if len(subs) > 1:
         for i, sub in enumerate(subs):
+          if i == 0:
+            continue
           # ========================================================================
           # pick under MAXD
           # goi = [poisson(x + 1, D, maxlim) if x < MAXD else 0 for x in entries[i]]
@@ -235,6 +190,31 @@ if __name__ == "__main__":
           ll = random_sampler(len(goi), goi)
 
           # =======================================================================
+
+          # j = r.randint(0, i - 1)
+          # # ========================================================================
+          # # pick under MAXD
+          # # goi = [poisson(x + 1, D, maxlim) if x < MAXD else 0 for x in entries[i]]
+          # # pick without limit
+          # goj = [poisson(x + 1, D, maxlim) for x in entries[j]]
+          # if sum(goj) == 0:
+          #   continue
+          # # pick without limit
+          # # goi[0] = 0 if sum(goi[1:]) != 0 else goi[0]
+          # goj = [val / sum(goj) for val in goj]
+          # # ========================================================================
+          # # pick without limit
+          # # goi = [poisson(x + 1, D) for x in entries[i]]
+          # # if sum(goi) == 0:
+          # #   continue
+          # # goi[0] = 0
+          # # goi = [val / sum(goi) for val in goi]
+          # # ========================================================================
+
+          # rr = random_sampler(len(goj), goj)
+
+          # =======================================================================
+
           nlist = []
           plist = []
           for subid, elist in enumerate(entries):
@@ -244,9 +224,10 @@ if __name__ == "__main__":
             sublist = []
             for eid, edeg in enumerate(elist):
               # pick under MAXD
-              # p = psub * (poisson(edeg + 1, D, maxlim) if edeg < MAXD else 0)
+              p = psub * (poisson(edeg + 1, D, maxlim) if edeg < MAXD else 0)
+              # p = (poisson(edeg + 1, D, maxlim) if edeg < MAXD else 0)
               # pick without limit
-              p = psub * (poisson(edeg + 1, D, maxlim))
+              # p = psub * (poisson(edeg + 1, D, maxlim))
               nlist.append((subid, eid))
               sublist.append(p)
             # pick without limit
@@ -255,8 +236,8 @@ if __name__ == "__main__":
           sumt = sum(plist)
           plist = [p / sumt for p in plist]
 
-          v = random_sampler(len(nlist), p=plist)
-          v, rr = nlist[v][0], nlist[v][1]
+          j = random_sampler(len(nlist), p=plist)
+          j, rr = nlist[j][0], nlist[j][1]
           # =======================================================================
           # v = random_sampler(len(all_plist[i]), p=all_plist[i])
           # gov = [poisson(x + 1, D) if x < MAXD else 0 for x in entries[v]]
@@ -267,8 +248,8 @@ if __name__ == "__main__":
           # rr = random_sampler(len(gov), gov)
           # =======================================================================
           entries[i][ll] += 1
-          entries[v][rr] += 1
-          edges.append(((i, ll), (v, rr)))
+          entries[j][rr] += 1
+          edges.append(((i, ll), (j, rr)))
           if len(edges) == sM:
             break
       end_time = time.time()
@@ -313,11 +294,15 @@ if __name__ == "__main__":
       #   sublist[0] = 0 if sum(sublist[1:]) != 0 else sublist[0]
       #   plist.extend(sublist)
       # sumt = sum(plist)
+      # print(plist)
       # plist = [p / sumt for p in plist]
-      # # # ====================================================================
+      # print(plist)
+      # # print(len(nlist), len(plist))
+      # input()
+      # # ====================================================================
       # edges = itertools.combinations(range(N), 2)    
       # cnt = 0   
-      start_time = time.time()
+      # start_time = time.time()
       # for edge in edges:
       #   u, v = edge[0], edge[1]
       #   if G.has_edge(u, v):
@@ -332,28 +317,30 @@ if __name__ == "__main__":
       #     cnt += 1
       #     if res_edges == cnt:
       #       break
-      #     # if res_edges // 2 == cnt:
-      #     #   nlist = []
-      #     #   plist = []
-      #     #   for sub, elist in enumerate(entries):
-      #     #     psub = len(elist) / sumN
-      #     #     sublist = []
-      #     #     for eid, edeg in enumerate(elist):
-      #     #       p = psub * (poisson(edeg + 1, D, maxlim) if edeg < MAXD else 0)
-      #     #       # p = psub * (poisson(edeg, D))
-      #     #       nlist.append((sub, eid))
-      #     #       sublist.append(p)
-      #     #     sublist[0] = 0 if sum(sublist[1:]) != 0 else sublist[0]
-      #     #     plist.extend(sublist)
-      #     #   sumt = sum(plist)
-      #     #   plist = [p / sumt for p in plist] 
-      #     #   res_edges = cnt
-      #     #   cnt = 0
+      #     if res_edges // 2 == cnt:
+      #       nlist = []
+      #       plist = []
+      #       for sub, elist in enumerate(entries):
+      #         psub = len(elist) / sumN
+      #         sublist = []
+      #         for eid, edeg in enumerate(elist):
+      #           p = psub * (poisson(edeg + 1, D, maxlim) if edeg < MAXD else 0)
+      #           # p = psub * (poisson(edeg, D))
+      #           nlist.append((sub, eid))
+      #           sublist.append(p)
+      #         sublist[0] = 0 if sum(sublist[1:]) != 0 else sublist[0]
+      #         plist.extend(sublist)
+      #       sumt = sum(plist)
+      #       plist = [p / sumt for p in plist] 
+      #       res_edges = cnt
+      #       cnt = 0
                
       # end_time = time.time()
       # times += end_time - start_time
 
-      while res_edges > 0:
+      start_time = time.time()
+      cnt = res_edges
+      while cnt > 0 and res_edges > 0:
         # print(entries)
         # ====================================================================
         # inner update
@@ -364,9 +351,10 @@ if __name__ == "__main__":
           sublist = []
           for eid, edeg in enumerate(elist):
             # pick under MAXD
-            # p = psub * (poisson(edeg + 1, D, maxlim) if edeg < MAXD else 0)
+            p = psub * (poisson(edeg + 1, D, maxlim) if edeg < MAXD else 0)
+            # p = (poisson(edeg + 1, D, maxlim) if edeg < MAXD else 0)
             # pick without limit
-            p = psub * (poisson(edeg + 1, D, maxlim))
+            # p = psub * (poisson(edeg + 1, D, maxlim))
             nlist.append((sub, eid))
             sublist.append(p)
           # pick without limit
@@ -374,15 +362,25 @@ if __name__ == "__main__":
           plist.extend(sublist)
         # ====================================================================
         sumt = sum(plist)
+        if sumt == 0:
+          break
         plist = [p / sumt for p in plist]
+        asampler = Alias(plist)
 
         # V2 of picking
         eset = set()
         for _ in range(res_edges):
-          u, v = random_sampler(len(nlist), p=plist, size=2, replace=False)
+          # u, v = random_sampler(len(nlist), p=plist, size=2, replace=False)
+          # u, v = asampler.sample(2)
+          while True:
+            u = asampler.sample()
+            v = asampler.sample()
+            if u != v:
+              break
           u, v = min(u, v), max(u, v)
           eset.add((u, v))
         res_edges -= len(eset)
+        cnt = min(cnt // 2, res_edges)
         
         while len(eset) != 0:
           u, v = eset.pop()
@@ -392,9 +390,8 @@ if __name__ == "__main__":
           entries[v][ventry] += 1
           extra_edges.append((indice[u] + uentry, indice[v] + ventry))
         # ======================================================================
-
       end_time = time.time()
-      times += end_time - start_time 
+      times += end_time - start_time
 
       G.add_edges_from(extra_edges)
       GOurs.append(G)
@@ -408,5 +405,3 @@ if __name__ == "__main__":
     eval(graphs, GOurs)
     print("total times: %f" % (times / len(graphs)))
     del GOurs
-
-  del graphs

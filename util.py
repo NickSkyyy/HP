@@ -1,6 +1,8 @@
 from eval.stats import *
 from math import *
 from torch_geometric.datasets import TUDataset
+from torch_geometric.datasets import Reddit, Reddit2 
+from torch_geometric.datasets import PPI, Flickr
 from torch_geometric.utils import *
 
 import matplotlib.pyplot as plt
@@ -13,12 +15,19 @@ import networkx as nx
 import numpy as np
 import random as r
 
+# =============================================
+# set your seed
+# =============================================
+# SEED = 36
+# np.random.seed(SEED)
+# r.seed(SEED)
+
 methods = [
-  "EA",
-  "BA",
-  "WR",
-  "MMSB",
-  "Kronecker",
+  # "EA",
+  # "BA",
+  # "WR",
+  # "MMSB",
+  # "Kronecker",
   "Ours",
 ]
 
@@ -34,9 +43,9 @@ def draw(graphs, dataset, name):
   pass
 
 def eval(Gref, Gpred):
-  # print("%.4lf" % degree_stats(Gref, Gpred))
-  # print("%.4lf" % clustering_stats(Gref, Gpred))
-  # print("%.4lf" % orbit_stats_all(Gref, Gpred))
+  print("%.4lf" % degree_stats(Gref, Gpred))
+  print("%.4lf" % clustering_stats(Gref, Gpred))
+  print("%.4lf" % orbit_stats_all(Gref, Gpred))
   pass
 
 def degrees(graphs):
@@ -68,27 +77,40 @@ def load_data(dataset, root=".\data"):
                  "IMDB-BINARY", "REDDIT-BINARY", "IMDB-MULTI", "deezer_ego_nets", ]:
     graphs = TUDataset(root, dataset)
     graphs = [to_networkx(graph, to_undirected=True) for graph in graphs]
+  elif dataset == "Reddit":
+    graphs = Reddit(root + "\Reddit")
+    graphs = [to_networkx(graph, to_undirected=True) for graph in graphs]
+  elif dataset == "Reddit2":
+    graphs = Reddit2(root + "\Reddit2")
+    graphs = [to_networkx(graph, to_undirected=True) for graph in graphs]
+  elif dataset == "PPI":
+    graphs = PPI(root + "\PPI")
+    graphs = [to_networkx(graph, to_undirected=True) for graph in graphs]
+  elif dataset == "Flickr":
+    graphs = Flickr(root + "\Flickr")
+    graphs = [to_networkx(graph, to_undirected=True) for graph in graphs]
   elif dataset == "GRID":
     graphs = []
     for _ in range(200):
-      x = r.randint(10, 20)
-      y = r.randint(10, 20)   
+      x = r.randint(3, 7)
+      y = r.randint(3, 7)   
       graphs.append(nx.grid_2d_graph(x, y))
   elif dataset == "TREE":
     graphs = []
     for _ in range(200):
-      n = r.randint(100, 200)
+      n = r.randint(10, 20)
       graphs.append(nx.random_tree(n))
   elif dataset == "RAND":
     graphs = []
     for _ in range(200):
-      n = r.randint(100, 200)
+      n = r.randint(10, 20)
       m = r.randint(n - 1, n * (n - 1) / 2)
       graphs.append(nx.dense_gnm_random_graph(n, m))
   elif dataset == "CLUS":
     graphs = []
     for _ in range(200):
-      n = r.randint(100, 200)
+      n = r.randint(10, 20)
+      # n = r.randint(5, 7)
       m = r.randint(n - 1, n * (n - 1) / 2)
       p = 2 * m / (n * (n - 1))
       m = max(1, int(2 * m / n))
@@ -103,7 +125,7 @@ def load_data(dataset, root=".\data"):
         continue
   elif dataset == "TEST":
     graphs = []
-    n = 150
+    n = 100
     p = log2(n) / (n - 1)
     # p = 0.1
     m = int(n * (n - 1) / 2 * p)
@@ -248,26 +270,103 @@ def kronecker(N, D):
 
 
 # MMSB
+# =========================================================================
 class MMSB:  
   def __init__(self, num_nodes, num_communities, p_init=0.5):  
     self.num_nodes = num_nodes  
     self.num_communities = num_communities  
-    self.p_init = p_init 
-      
+    self.p_init = p_init
+       
     self.membership_probs = np.full((num_nodes, num_communities), p_init / num_communities)  
-        
+       
     self.community_connection_probs = np.random.rand(num_communities, num_communities)  
     self.normalize_community_connection_probs()  
         
-  def normalize_community_connection_probs(self):    
+  def normalize_community_connection_probs(self):   
     row_sums = np.sum(self.community_connection_probs, axis=1, keepdims=True)  
     self.community_connection_probs /= row_sums  
         
   def generate_graph(self):  
     G = nx.Graph()  
+      
     for i in range(self.num_nodes):  
-      for j in range(i + 1, self.num_nodes):  
-        edge_prob = np.dot(self.membership_probs[i], np.dot(self.community_connection_probs, self.membership_probs[j]))          
-        if np.random.rand() < edge_prob:  
-          G.add_edge(i, j)   
-    return G
+        for j in range(i + 1, self.num_nodes):  
+            edge_prob = np.dot(self.membership_probs[i], np.dot(self.community_connection_probs, self.membership_probs[j]))  
+                
+            if np.random.rand() < edge_prob:  
+                G.add_edge(i, j)  
+      
+    return G  
+    
+  def plot_graph(self, G):  
+    plt.figure(figsize=(8, 6))  
+    nx.draw(G, with_labels=True, node_size=500, node_color=[[i / self.num_communities for i in range(self.num_communities)]] * self.num_nodes, cmap=plt.cm.Rainbow)  
+    plt.title("Generated Graph with MMSB")  
+    plt.show()
+# =========================================================================
+
+# Alias Sampler
+class Alias:
+  def __init__(self, plist):
+    self.n = len(plist)
+    self.prob = [0.0] * self.n
+    self.alias = [0] * self.n
+    self._preprocess(plist)
+  
+  def _preprocess(self, plist):
+    small = []
+    large = []
+    q = [p * self.n for p in plist]
+    for i in range(self.n):
+      if q[i] < 1.0:
+        small.append(i)
+      else:
+        large.append(i)
+    while small and large:
+      i = small.pop()
+      j = large.pop()
+      self.prob[i] = q[i]
+      self.alias[i] = j
+      q[j] = q[j] + q[i] - 1.0
+      if q[j] < 1.0:
+        small.append(j)
+      else:
+        large.append(j)
+    while large:
+      j = large.pop()
+      self.prob[j] = 1.0
+    while small:
+      i = small.pop()
+      self.prob[i] = 1.0
+
+  def sample(self, size=1):
+    rnt = []
+    # first try
+    r1 = r.random()
+    r2 = r.random()
+    i = int(r1 * self.n)
+    if r2 < self.prob[i]:
+      rnt.append(i)
+    else:
+      rnt.append(self.alias[i])
+    if size == 2:
+      r1 = r.random()
+      r2 = r.random()
+      i = int(r1 * self.n)
+      temp = -1
+      if r2 < self.prob[i]:
+        temp = i
+      else:
+        temp = self.alias[i]
+      if temp == rnt[0]:
+        alist = [i for i in range(self.n)]
+        alist.remove(rnt[0])
+        r2 = r.random()
+        i = int(r2 * (self.n - 1))
+        rnt.append(alist[i])
+      else:
+        rnt.append(temp)
+    if size == 1:
+      return rnt[0]
+    else:
+      return rnt

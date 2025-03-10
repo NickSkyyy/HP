@@ -1,3 +1,3 @@
-# A Hierarchical Poisson Generator for Universal Graphs under Limited Resources
+# A Hierarchical Scale-free Graph Generator under Limited Resources
 
-An official code for *A Hierarchical Poisson Generator for Universal Graphs under Limited Resources* (under review).
+An official code for *A Hierarchical Scale-free Graph Generator under Limited Resources* (under review).

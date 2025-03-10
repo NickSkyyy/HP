@@ -15,6 +15,8 @@ import time
 from args import args
 from util import *
 
+NUM = 10000
+
 if __name__ == "__main__":
   graphs = load_data(args.dataset)
   deg = 0
@@ -134,16 +136,19 @@ if __name__ == "__main__":
       subs = [(MAXD + 1, MAXD)]
       sN, sM = N - MAXD - 1, M - MAXD - 1
       sumN, sumM = MAXD + 1, MAXD
-      poi_plist = [gamma(k, D, p) if k < D else 1 - gamma(k, D, p) for k in range(0, N)]
-      # poi_plist = [pareto(k, D) if k < D else 1 - pareto(k, D) for k in range(0, N)]
+      # poi_plist = [norm(k - D) if k <= D else norm(k - D) - norm(0) for k in range(0, N)]
+      # poi_plist = [expp(k, D) for k in range(0, N)]
+      # poi_plist = [gamma(k, D, p) if k < D else gamma(k, D, p) - gamma(D, D, p) for k in range(0, N)]
+      poi_plist = [pareto(k, D) if k < D else pareto(k, D) - pareto(D, D) for k in range(0, N)]
       poi_plist = [val / sum(poi_plist) for val in poi_plist]
-      # print(poi_plist)
-      # input()
+      asampler = Alias(poi_plist)
       start_time = time.time()
       while sN > 0 and sM > 0:
         # nn = min(sN, MAXD + 1)
+        # d = uni_sampler(sN, 1)
         # d = poisson_sampler(nn, D)
-        d = poisson_fast_sampler(poi_plist, 1)
+        # d = poisson_fast_sampler(poi_plist, 1)
+        d = asampler.sample()
         if d > sN:
           d = sN
         subs.append((d + 1, d))
@@ -176,16 +181,16 @@ if __name__ == "__main__":
       edges = []
       if len(subs) > 1:
         for i, sub in enumerate(subs):
+          if i == 0:
+            continue
           # ========================================================================
           # pick under MAXD
           # goi = [poisson(x + 1, D, maxlim) if x < MAXD else 0 for x in entries[i]]
           # pick without limit
-          goi = [gamma(k + 1, D, p) if k + 1 < D else 1 - gamma(k + 1, D, p) for k in entries[i]]
-          # goi = [pareto(k + 1, D) if k + 1 < D else 1 - pareto(k + 1, D) for k in entries[i]]
-          # print("goi")
-          # print(goi)
-          # print(sum(goi))
-          # input()
+          # goi = [norm(k + 1 - D) if k + 1 <= D else norm(k + 1 - D) - norm(0) for k in entries[i]]
+          # goi = [expp(k + 1, D) for k in entries[i]]
+          # goi = [gamma(k + 1, D, p) if k + 1 < D else gamma(k + 1, D, p) - gamma(D, D, p) for k in entries[i]]
+          goi = [pareto(k + 1, D) if k + 1 < D else pareto(k + 1, D) - pareto(D, D) for k in entries[i]]
           if abs(sum(goi)) < 1e-5 or isnan(sum(goi)):
             continue
           # pick without limit
@@ -201,6 +206,34 @@ if __name__ == "__main__":
           # ========================================================================
 
           ll = random_sampler(len(goi), goi)
+          # ll = uni_sampler(len(entries[i]), 1)
+
+          # j = r.randint(0, i - 1)
+          # # ========================================================================
+          # # pick under MAXD
+          # # goi = [poisson(x + 1, D, maxlim) if x < MAXD else 0 for x in entries[i]]
+          # # pick without limit
+          # # goj = [norm(k + 1 - D) if k + 1 <= D else norm(k + 1 - D) - norm(0) for k in entries[j]]
+          # # goj = [expp(k + 1, D) for k in entries[j]]
+          # # goj = [poisson(x + 1, D, maxlim) for x in entries[j]]
+          # goj = [gamma(k + 1, D, p) if k + 1 < D else gamma(k + 1, D, p) - gamma(D, D, p) for k in entries[j]]
+          # # goj = [pareto(k + 1, D) if k + 1 < D else pareto(k + 1, D) - pareto(D, D) for k in entries[j]]
+          # if sum(goj) == 0:
+          #   continue
+          # # pick without limit
+          # # goi[0] = 0 if sum(goi[1:]) != 0 else goi[0]
+          # goj = [val / sum(goj) for val in goj]
+          # # ========================================================================
+          # # pick without limit
+          # # goi = [poisson(x + 1, D) for x in entries[i]]
+          # # if sum(goi) == 0:
+          # #   continue
+          # # goi[0] = 0
+          # # goi = [val / sum(goi) for val in goi]
+          # # ========================================================================
+
+          # rr = random_sampler(len(goj), goj)
+          # rr = uni_sampler(len(entries[j]), 1)
 
           # =======================================================================
           nlist = []
@@ -213,9 +246,10 @@ if __name__ == "__main__":
             for eid, edeg in enumerate(elist):
               # pick under MAXD
               # p = psub * (poisson(edeg + 1, D, maxlim) if edeg < MAXD else 0)
+              # p = psub * (norm(edeg + 1 - D) if edeg + 1 <= D else norm(edeg + 1 - D) - norm(0)) 
               # pick without limit
-              p = psub * (gamma(edeg + 1, D, p) if edeg + 1 < D else 1 - gamma(edeg + 1, D, p)) 
-              # p = psub * (pareto(edeg + 1, D) if edeg + 1 < D else 1 - pareto(edeg + 1, D)) 
+              # p = psub * (gamma(edeg + 1, D, p) if edeg + 1 < D else gamma(edeg + 1, D, p) - gamma(D, D, p)) 
+              p = psub * (pareto(edeg + 1, D) if edeg + 1 < D else pareto(edeg + 1, D) - pareto(D, D))     
               if isnan(p):
                 p = 0.0
               nlist.append((subid, eid))
@@ -232,8 +266,8 @@ if __name__ == "__main__":
           plist = [p / sumt for p in plist]
 
 
-          v = random_sampler(len(nlist), p=plist)
-          v, rr = nlist[v][0], nlist[v][1]
+          j = random_sampler(len(nlist), p=plist)
+          j, rr = nlist[j][0], nlist[j][1]
           # =======================================================================
           # v = random_sampler(len(all_plist[i]), p=all_plist[i])
           # gov = [poisson(x + 1, D) if x < MAXD else 0 for x in entries[v]]
@@ -244,8 +278,8 @@ if __name__ == "__main__":
           # rr = random_sampler(len(gov), gov)
           # =======================================================================
           entries[i][ll] += 1
-          entries[v][rr] += 1
-          edges.append(((i, ll), (v, rr)))
+          entries[j][rr] += 1
+          edges.append(((i, ll), (j, rr)))
           if len(edges) == sM:
             break
       end_time = time.time()
@@ -334,7 +368,8 @@ if __name__ == "__main__":
       # end_time = time.time()
       # times += end_time - start_time
 
-      while res_edges > 0:
+      cnt = res_edges
+      while cnt > 0 and res_edges > 0:
         # print(entries)
         # ====================================================================
         # inner update
@@ -345,10 +380,13 @@ if __name__ == "__main__":
           sublist = []
           for eid, edeg in enumerate(elist):
             # pick under MAXD
+            # p = psub / len(elist)
             # p = psub * (poisson(edeg + 1, D, maxlim) if edeg < MAXD else 0)
             # pick without limit
-            p = psub * (gamma(edeg + 1, D, p) if edeg + 1 < D else 1 - gamma(edeg + 1, D, p)) 
-            # p = psub * (pareto(edeg + 1, D) if edeg + 1 < D else 1 - pareto(edeg + 1, D))             
+            # p = psub * (norm(edeg + 1 - D) if edeg + 1 <= D else norm(edeg + 1 - D) - norm(0)) 
+            # p = psub * expp(edeg + 1, D)
+            # p = psub * (gamma(edeg + 1, D, p) if edeg + 1 < D else gamma(edeg + 1, D, p) - gamma(D, D, p)) 
+            p = psub * (pareto(edeg + 1, D) if edeg + 1 < D else pareto(edeg + 1, D) - pareto(D, D))             
             if isnan(p):
               p = 0.0
             nlist.append((sub, eid))
@@ -361,18 +399,26 @@ if __name__ == "__main__":
         if abs(sumt) < 1e-5 or isnan(sumt):
           break
         plist = [p / sumt for p in plist]
+        asampler = Alias(plist)
 
         # V2 of picking
         eset = set()
         for _ in range(res_edges):
           try:
-            u, v = random_sampler(len(nlist), p=plist, size=2, replace=False)
+            # u, v = random_sampler(len(nlist), p=plist, size=2, replace=False)
+            # u, v = asampler.sample(2)
+            while True:
+              u = asampler.sample()
+              v = asampler.sample()
+              if u != v:
+                break
+            u, v = min(u, v), max(u, v)
+            eset.add((u, v))
           except:
             res_edges = 0
             break
-          u, v = min(u, v), max(u, v)
-          eset.add((u, v))
         res_edges -= len(eset)
+        cnt = min(cnt // 2, res_edges)
         
         while len(eset) != 0:
           u, v = eset.pop()

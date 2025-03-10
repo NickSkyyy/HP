@@ -146,7 +146,6 @@ def orca(graph):
 
     return node_orbit_counts
     
-# 不好用
 def motif_stats(graph_ref_list, graph_pred_list, motif_type='4cycle', ground_truth_match=None, bins=100):
     # graph motif counts (int for each graph)
     # normalized by graph size
