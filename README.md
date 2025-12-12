@@ -43,7 +43,7 @@ python nxgen.py --dataset NCI1 --method Ours --num 10
   - synthetic: `CLUS`, `EGO`, `GRID`, `TREE`
 - method: supported baselines, `ER`, `BA`, `WS`, `MMSB`, `Kronecker`, `Ours`
   - use `all` to compare methods in a single run
-- num (optional): the number of graphs
+- num (optional): the number of graphs (reduce to obtain a quick demo)
 
 ## Result Format
 Results are in format:
