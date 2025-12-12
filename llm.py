@@ -18,7 +18,7 @@ from util import *
 NUM = 1000000
 
 if __name__ == "__main__":
-  graphs = load_data(args.dataset)
+  graphs = load_data(args.dataset)[:args.num]
   deg = 0
   clus = 0
   orbits = 0
@@ -372,13 +372,11 @@ if __name__ == "__main__":
         for _ in range(res_edges):
           # u, v = random_sampler(len(nlist), p=plist, size=2, replace=False)
           # u, v = asampler.sample(2)
-          while True:
-            u = asampler.sample()
-            v = asampler.sample()
-            if u != v:
-              break
-          u, v = min(u, v), max(u, v)
-          eset.add((u, v))
+          u = asampler.sample()
+          v = asampler.sample()
+          if u != v:
+            u, v = min(u, v), max(u, v)
+            eset.add((u, v))
         res_edges -= len(eset)
         cnt = min(cnt // 2, res_edges)
         
@@ -395,6 +393,8 @@ if __name__ == "__main__":
 
       G.add_edges_from(extra_edges)
       GOurs.append(G)
+      if len(GOurs) == NUM:
+        break
     # for i, G in enumerate(GOurs):
     #   # colors = ["#B63D3D" if val in indice else "#557AA4" for val in range(G.number_of_nodes())]
     #   colors = ["#B63D3D" if node in indice else "#557AA4" for node in G.nodes()]

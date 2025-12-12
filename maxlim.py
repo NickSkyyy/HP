@@ -15,18 +15,24 @@ import time
 from args import args
 from util import *
 
-NUM = 1000000
-UNDER_LIM = False
+import numpy as np
+import random as r
+# candidate
+# 78, 
+SEED = 78
+np.random.seed(SEED)
+r.seed(SEED)
+
+NUM = 1
+UNDER_LIM = True
 
 if __name__ == "__main__":
-  graphs = load_data(args.dataset)
+  os.makedirs("visual/{}".format(args.dataset), exist_ok=True)
+  graphs = load_data(args.dataset)[:1]
   deg = 0
-  clus = 0
-  orbits = 0
-  ocnt = 0
-  sparse = 0
   print(len(graphs))
   # draw(graphs, args.dataset, "ori")
+  # exit()
 
   if "Ours" in methods:
     print("Ours")
@@ -46,12 +52,14 @@ if __name__ == "__main__":
           break
         lim += 1
       # cut off when under 0
-      maxlim = lim
+      if UNDER_LIM:
+        maxlim = lim
       # maxlim = MAXD
       # ===========================================================
       G = graph
       # print(nx.degree_histogram(G))
       MAXD = len(nx.degree_histogram(G)) - 1
+      print(MAXD)
       if 2 * M == N * (N - 1):
         G = nx.complete_graph(N)
         GOurs.append(G)
@@ -148,11 +156,11 @@ if __name__ == "__main__":
       G.add_nodes_from(indice)
       G.add_edges_from(edge_index)
 
-      # colors = ["#B63D3D" if node in indice else "#557AA4" for node in G.nodes()]
-      # print(colors)
-      # nx.draw(G, pos=nx.spring_layout(G), node_color=colors, node_size=100, with_labels=True)
-      # plt.savefig(".\\visual\\%s\\parse.png" % (args.dataset))
-      # plt.close()
+      colors = ["#C66218" if node in indice else "#004285" for node in G.nodes()]
+      print(colors)
+      nx.draw(G, pos=nx.spring_layout(G), node_color=colors, node_size=100, with_labels=True)
+      plt.savefig(".\\visual\\%s\\parsing stage.png" % (args.dataset))
+      plt.close()
 
       edge_index = []
       for edge in edges:
@@ -160,82 +168,18 @@ if __name__ == "__main__":
         v = indice[edge[1][0]] + edge[1][1]
         edge_index.extend([(u, v), (v, u)])
       G.add_edges_from(edge_index)
-      edge_color = ["#B63D3D" if edge in edge_index else "black" for edge in G.edges()]
+      edge_color = ["#C66218" if edge in edge_index else "black" for edge in G.edges()]
       pN, pM = len(G.nodes()), len(G.edges())
 
-      # print(edge_index)
-      # colors = ["#B63D3D" if node in indice else "#557AA4" for node in G.nodes()]
-      # nx.draw(G, pos=nx.spring_layout(G), node_color=colors, node_size=100, with_labels=True)
-      # nx.draw_networkx_edges(G, pos=nx.spring_layout(G), edgelist=G.edges(), edge_color=edge_color)
-      # nx.draw(G, pos=nx.spring_layout(G), node_color=colors, node_size=100, with_labels=True,  edgelist=G.edges(), edge_color=edge_color)
-      # nx.draw_networkx_edges(G, pos=nx.spring_layout(G), edgelist=G.edges(), edge_color=edge_color)
-      # plt.savefig(".\\visual\\%s\\%d_ours.png" % (args.dataset, i))
-      # plt.savefig(".\\visual\\%s\\link.png" % (args.dataset))
-      # plt.close()
-      # ===========================================================================
+      print(edge_index)
+      colors = ["#C66218" if node in indice else "#004285" for node in G.nodes()]
+      nx.draw(G, pos=nx.spring_layout(G), node_color=colors, node_size=100, with_labels=True,  edgelist=G.edges(), edge_color=edge_color)
+      plt.savefig(".\\visual\\%s\\connecting stage.png" % (args.dataset))
+      plt.close()
 
       # 3.2 basic entries
       res_edges = M - pM
       extra_edges = []
-      # ====================================================================
-      # outer update
-      # nlist = []
-      # plist = []
-      # for sub, elist in enumerate(entries):
-      #   psub = len(elist) / sumN
-      #   sublist = []
-      #   for eid, edeg in enumerate(elist):
-      #     p = psub * (poisson(edeg + 1, D, maxlim) if edeg < MAXD else 0)
-      #     # p = psub * (poisson(edeg, D))
-      #     nlist.append((sub, eid))
-      #     sublist.append(p)
-      #   sublist[0] = 0 if sum(sublist[1:]) != 0 else sublist[0]
-      #   plist.extend(sublist)
-      # sumt = sum(plist)
-      # print(plist)
-      # plist = [p / sumt for p in plist]
-      # print(plist)
-      # # print(len(nlist), len(plist))
-      # input()
-      # # ====================================================================
-      # edges = itertools.combinations(range(N), 2)    
-      # cnt = 0   
-      # start_time = time.time()
-      # for edge in edges:
-      #   u, v = edge[0], edge[1]
-      #   if G.has_edge(u, v):
-      #     continue
-      #   p = plist[edge[0]] * plist[edge[1]]
-      #   if np.random.random() < p:
-      #     G.add_edge(*edge)
-      #     u, uentry = nlist[u][0], nlist[u][1]
-      #     v, ventry = nlist[v][0], nlist[v][1]
-      #     entries[u][uentry] += 1
-      #     entries[v][ventry] += 1
-      #     cnt += 1
-      #     if res_edges == cnt:
-      #       break
-      #     if res_edges // 2 == cnt:
-      #       nlist = []
-      #       plist = []
-      #       for sub, elist in enumerate(entries):
-      #         psub = len(elist) / sumN
-      #         sublist = []
-      #         for eid, edeg in enumerate(elist):
-      #           p = psub * (poisson(edeg + 1, D, maxlim) if edeg < MAXD else 0)
-      #           # p = psub * (poisson(edeg, D))
-      #           nlist.append((sub, eid))
-      #           sublist.append(p)
-      #         sublist[0] = 0 if sum(sublist[1:]) != 0 else sublist[0]
-      #         plist.extend(sublist)
-      #       sumt = sum(plist)
-      #       plist = [p / sumt for p in plist] 
-      #       res_edges = cnt
-      #       cnt = 0
-               
-      # end_time = time.time()
-      # times += end_time - start_time
-
       cnt = res_edges
       while cnt > 0 and res_edges > 0:
         # print(entries)
@@ -289,19 +233,14 @@ if __name__ == "__main__":
         # ======================================================================
       
       G.add_edges_from(extra_edges)
-      # edge_color = ["#B63D3D" if edge in extra_edges else "black" for edge in G.edges()]
-      # nx.draw(G, pos=nx.spring_layout(G), node_color=colors, node_size=100, with_labels=True,  edgelist=G.edges(), edge_color=edge_color)
-      # plt.savefig(".\\visual\\%s\\rest.png" % (args.dataset))
-      # plt.close()
+      edge_color = ["#C66218" if edge in extra_edges else "black" for edge in G.edges()]
+      nx.draw(G, pos=nx.spring_layout(G), node_color=colors, node_size=100, with_labels=True,  edgelist=G.edges(), edge_color=edge_color)
+      plt.savefig(".\\visual\\%s\\rebuilding stage.png" % (args.dataset))
+      # plt.show()
+      plt.close()
       GOurs.append(G)
-    # for i, G in enumerate(GOurs):
-    #   colors = ["#B63D3D" if node in indice else "#557AA4" for node in G.nodes()]
-    #   nx.draw(G, pos=nx.shell_layout(G), node_color=colors, node_size=100)
-    #   # plt.savefig(".\\visual\\%s\\%d_ours.png" % (args.dataset, i))
-    #   plt.show()
-    #   plt.close()
-    eval(graphs, GOurs)
-    print("total times: %f" % (times / len(graphs)))
+      if len(GOurs) == NUM:
+        break
     del GOurs
 
   del graphs

@@ -23,11 +23,11 @@ import random as r
 # r.seed(SEED)
 
 methods = [
-  # "EA",
-  # "BA",
-  # "WR",
-  # "MMSB",
-  # "Kronecker",
+  "ER",
+  "BA",
+  "WS",
+  "MMSB",
+  "Kronecker",
   "Ours",
 ]
 
@@ -35,7 +35,7 @@ def draw(graphs, dataset, name):
   # if not os.path.exists(".\\visual\\%s" % dataset):
   #   os.mkdir(".\\visual\\%s" % dataset)
   # for i, G in enumerate(graphs):
-  #   colors = ["#557AA4" for _ in range(G.number_of_nodes())]
+  #   colors = ["#004285" for _ in range(G.number_of_nodes())]
   #   nx.draw(G, pos=nx.spring_layout(G), node_color=colors, node_size=100)
   #   plt.savefig(".\\visual\\%s\\%d_%s.png" % (dataset, i, name))
   #   # plt.show()
@@ -276,9 +276,9 @@ class MMSB:
     self.num_nodes = num_nodes  
     self.num_communities = num_communities  
     self.p_init = p_init
-       
-    self.membership_probs = np.full((num_nodes, num_communities), p_init / num_communities)  
-       
+      
+    self.membership_probs = np.full((num_nodes, num_communities), p_init / num_communities) 
+      
     self.community_connection_probs = np.random.rand(num_communities, num_communities)  
     self.normalize_community_connection_probs()  
         
@@ -290,19 +290,12 @@ class MMSB:
     G = nx.Graph()  
       
     for i in range(self.num_nodes):  
-        for j in range(i + 1, self.num_nodes):  
-            edge_prob = np.dot(self.membership_probs[i], np.dot(self.community_connection_probs, self.membership_probs[j]))  
-                
-            if np.random.rand() < edge_prob:  
-                G.add_edge(i, j)  
+      for j in range(i + 1, self.num_nodes):  
+        edge_prob = np.dot(self.membership_probs[i], np.dot(self.community_connection_probs, self.membership_probs[j]))  
       
+        if np.random.rand() < edge_prob:  
+            G.add_edge(i, j)  
     return G  
-    
-  def plot_graph(self, G):  
-    plt.figure(figsize=(8, 6))  
-    nx.draw(G, with_labels=True, node_size=500, node_color=[[i / self.num_communities for i in range(self.num_communities)]] * self.num_nodes, cmap=plt.cm.Rainbow)  
-    plt.title("Generated Graph with MMSB")  
-    plt.show()
 # =========================================================================
 
 # Alias Sampler

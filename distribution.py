@@ -18,7 +18,7 @@ from util import *
 NUM = 10000
 
 if __name__ == "__main__":
-  graphs = load_data(args.dataset)
+  graphs = load_data(args.dataset)[:args.num]
   deg = 0
   clus = 0
   orbits = 0
@@ -62,6 +62,8 @@ if __name__ == "__main__":
       end_time = time.time()
       times += end_time - start_time
       GEA.append(G)
+      if len(GEA) == NUM:
+        break
     draw(GEA, args.dataset, "EA")
     eval(graphs, GEA)
     print("total times: %f" % (times / len(graphs)))
@@ -80,6 +82,8 @@ if __name__ == "__main__":
       end_time = time.time()
       times += end_time - start_time
       GBA.append(G)
+      if len(GBA) == NUM:
+        break
     draw(GBA, args.dataset, "BA")
     eval(graphs, GBA)
     print("total times: %f" % (times / len(graphs)))
@@ -99,6 +103,8 @@ if __name__ == "__main__":
       end_time = time.time()
       times += end_time - start_time
       GWR.append(G)
+      if len(GWR) == NUM:
+        break
     draw(GWR, args.dataset, "WR")
     eval(graphs, GWR)
     print("total times: %f" % (times / len(graphs)))
@@ -407,13 +413,11 @@ if __name__ == "__main__":
           try:
             # u, v = random_sampler(len(nlist), p=plist, size=2, replace=False)
             # u, v = asampler.sample(2)
-            while True:
-              u = asampler.sample()
-              v = asampler.sample()
-              if u != v:
-                break
-            u, v = min(u, v), max(u, v)
-            eset.add((u, v))
+            u = asampler.sample()
+            v = asampler.sample()
+            if u != v:
+              u, v = min(u, v), max(u, v)
+              eset.add((u, v))
           except:
             res_edges = 0
             break
@@ -431,6 +435,8 @@ if __name__ == "__main__":
       
       G.add_edges_from(extra_edges)
       GOurs.append(G)
+      if len(GOurs) == NUM:
+        break
     # for i, G in enumerate(GOurs):
     #   colors = ["red" if val in indice else "blue" for val in range(G.number_of_nodes())]
     #   nx.draw(G, pos=nx.shell_layout(G), node_color=colors)

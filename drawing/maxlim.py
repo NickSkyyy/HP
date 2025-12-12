@@ -75,23 +75,23 @@ ax.set_yticks([])
 
 # set text
 ax = fig.add_subplot(gs[1, 0])
-ax.text(lx, ly, "under limitation", rotation=90, verticalalignment="center")
+ax.text(lx, ly, "with limitation", rotation=90, verticalalignment="center")
 ax.axis("off")
 
 ax = fig.add_subplot(gs[2, 0])
-ax.text(lx, ly, "no limitation", rotation=90, verticalalignment="center")
+ax.text(lx, ly, "without limitation", rotation=90, verticalalignment="center")
 ax.axis("off")
 
 ax = fig.add_subplot(gs[0, 1])
-ax.text(px, py, "1. parse for anchor", ha="left")
+ax.text(px, py, "1. parsing stage", ha="left")
 ax.axis("off")
 
 ax = fig.add_subplot(gs[0, 2])
-ax.text(px, py, "2. first connection", ha="left")
+ax.text(px, py, "2. connecting stage", ha="left")
 ax.axis("off")
 
 ax = fig.add_subplot(gs[0, 3])
-ax.text(px, py, "3. rest edges", ha="left")
+ax.text(px, py, "3. rebuilding stage", ha="left")
 ax.axis("off")
 
 ax = fig.add_subplot(gs[0, 4])

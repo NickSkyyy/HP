@@ -1,1 +1,0 @@
-Please download datasets from `torch_geometric`.

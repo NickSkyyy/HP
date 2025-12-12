@@ -18,14 +18,16 @@ from util import *
 NUM = 1000000
 
 if __name__ == "__main__":
-  graphs = load_data(args.dataset)
+  graphs = load_data(args.dataset)[:args.num]
+  if args.method != "all":
+    methods = [args.method]
   # deg = 0
   # clus = 0
   # orbits = 0
   # ocnt = 0
   # sparse = 0
   # print(len(graphs))
-  # # draw(graphs, args.dataset, "ori")
+  # draw(graphs, args.dataset, "ori")
   # for graph in graphs:
   #   nn = 0
   #   for val in nx.degree(graph):
@@ -49,9 +51,9 @@ if __name__ == "__main__":
   # print(sparse)
   # input()
 
-  if "EA" in methods:
-    print("EA")
-    GEA = []
+  if "ER" in methods:
+    print("ER")
+    GER = []
     times = 0
     for graph in tqdm(graphs):
       start_time = time.time()
@@ -61,11 +63,13 @@ if __name__ == "__main__":
       G = nx.gnp_random_graph(N, p)
       end_time = time.time()
       times += end_time - start_time
-      GEA.append(G)
-    draw(GEA, args.dataset, "EA")
-    eval(graphs, GEA)
+      GER.append(G)
+      if len(GER) == NUM:
+        break
+    draw(GER, args.dataset, "ER")
+    eval(graphs, GER)
     print("total times: %f" % (times / len(graphs)))
-    del GEA
+    del GER
 
   if "BA" in methods:
     print("BA")
@@ -80,14 +84,16 @@ if __name__ == "__main__":
       end_time = time.time()
       times += end_time - start_time
       GBA.append(G)
+      if len(GBA) == NUM:
+        break
     draw(GBA, args.dataset, "BA")
     eval(graphs, GBA)
     print("total times: %f" % (times / len(graphs)))
     del GBA
 
-  if "WR" in methods:
-    print("WR")
-    GWR = []
+  if "WS" in methods:
+    print("WS")
+    GWS = []
     times = 0
     for graph in tqdm(graphs):
       start_time = time.time()
@@ -97,11 +103,13 @@ if __name__ == "__main__":
       G = nx.watts_strogatz_graph(N, D, p)
       end_time = time.time()
       times += end_time - start_time
-      GWR.append(G)
-    draw(GWR, args.dataset, "WR")
-    eval(graphs, GWR)
+      GWS.append(G)
+      if len(GWS) == NUM:
+        break
+    draw(GWS, args.dataset, "WS")
+    eval(graphs, GWS)
     print("total times: %f" % (times / len(graphs)))
-    del GWR
+    del GWS
 
   if "MMSB" in methods:
     print("MMSB")
@@ -111,13 +119,15 @@ if __name__ == "__main__":
       N, M = len(graph.nodes()), len(graph.edges())
       D = max(1, int(2 * M / N))
       C = max(1, int(N / D))
-      p = 2 * M / (N * (N - 1))
+      p = 1.0
       mm_gen = MMSB(N, C, p)
       start_time = time.time()
       G = mm_gen.generate_graph()
       end_time = time.time()
       times += end_time - start_time
       GMM.append(G)
+      if len(GMM) == NUM:
+        break
     draw(GMM, args.dataset, "MM")
     eval(graphs, GMM)
     print("total times: %f" % (times / len(graphs)))
@@ -140,6 +150,8 @@ if __name__ == "__main__":
       # nx.draw(G)
       # plt.show()
       # plt.close()
+      if len(GKro) == NUM:
+        break
     draw(GKro, args.dataset, "Kronecker")
     eval(graphs, GKro)
     print("total times: %f" % (times / len(graphs)))
@@ -176,32 +188,6 @@ if __name__ == "__main__":
         G = nx.complete_graph(N)
         GOurs.append(G)
         continue
-      
-      # start_time = time.time()
-      # for i in range(N):
-      #   for j in range(N):
-      #     a = 1 
-      # end_time = time.time()
-      # TN += end_time - start_time
-
-      # start_time = time.time()
-      # tM = M
-      # while tM > 0:
-      #   for _ in range(N):
-      #     a = 1
-      #   tM = tM // 2
-      # for _ in range(M):
-      #   a = 1
-      # for i in range(3):
-      #   for _ in range(N):
-      #     a = 1
-      # for i in range(4):
-      #   tN = N
-      #   while tN > 0:
-      #     a = 1
-      #     tN -= D
-      # end_time = time.time()
-      # TNM += end_time - start_time
 
       # 2. pick (d+1, d), d = MAXD
       subs = [(MAXD + 1, MAXD)]
@@ -456,13 +442,11 @@ if __name__ == "__main__":
         for _ in range(res_edges):
           # u, v = random_sampler(len(nlist), p=plist, size=2, replace=False)
           # u, v = asampler.sample(2)
-          while True:
-            u = asampler.sample()
-            v = asampler.sample()
-            if u != v:
-              break
-          u, v = min(u, v), max(u, v)
-          eset.add((u, v))
+          u = asampler.sample()
+          v = asampler.sample()
+          if u != v:
+            u, v = min(u, v), max(u, v)
+            eset.add((u, v))
         res_edges -= len(eset)
         cnt = min(cnt // 2, res_edges)
         
@@ -480,12 +464,14 @@ if __name__ == "__main__":
 
       G.add_edges_from(extra_edges)
       GOurs.append(G)
+      if len(GOurs) == NUM:
+        break
     # for i, G in enumerate(GOurs):
     #   # colors = ["#B63D3D" if val in indice else "#557AA4" for val in range(G.number_of_nodes())]
-    #   colors = ["#B63D3D" if node in indice else "#557AA4" for node in G.nodes()]
-    #   nx.draw(G, pos=nx.shell_layout(G), node_color=colors, node_size=100)
-    #   # plt.savefig(".\\visual\\%s\\%d_ours.png" % (args.dataset, i))
-    #   plt.show()
+    #   colors = ["#C66218" if node in indice else "#004285" for node in G.nodes()]
+    #   nx.draw(G, pos=nx.spring_layout(G), node_color=colors, node_size=100)
+    #   plt.savefig(".\\visual\\%s\\%d_ours.png" % (args.dataset, i))
+    #   # plt.show()
     #   plt.close()
     eval(graphs, GOurs)
     print("total times: %f" % (times / len(graphs)))

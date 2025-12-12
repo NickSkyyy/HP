@@ -19,7 +19,7 @@ from util import *
 NUM = 1000000
 
 if __name__ == "__main__":
-  graphs = load_data(args.dataset)
+  graphs = load_data(args.dataset)[:args.num]
   deg = 0
   clus = 0
   orbits = 0
@@ -28,6 +28,7 @@ if __name__ == "__main__":
   print(len(graphs))
   draw(graphs, args.dataset, "ori")
   deg_ori = degrees(graphs)
+  deg_er, deg_ba, deg_ws, deg_MM, deg_kro = [], [], [], [], []
   # for graph in graphs:
   #   nn = 0
   #   for val in nx.degree(graph):
@@ -64,8 +65,10 @@ if __name__ == "__main__":
       end_time = time.time()
       times += end_time - start_time
       GEA.append(G)
+      if len(GEA) == NUM:
+        break
     draw(GEA, args.dataset, "EA")
-    deg_ea = degrees(GEA)
+    deg_er = degrees(GEA)
     eval(graphs, GEA)
     print("total times: %f" % (times / len(graphs)))
     del GEA
@@ -83,6 +86,8 @@ if __name__ == "__main__":
       end_time = time.time()
       times += end_time - start_time
       GBA.append(G)
+      if len(GBA) == NUM:
+        break
     draw(GBA, args.dataset, "BA")
     deg_ba = degrees(GBA)
     eval(graphs, GBA)
@@ -103,8 +108,10 @@ if __name__ == "__main__":
       end_time = time.time()
       times += end_time - start_time
       GWR.append(G)
+      if len(GWR) == NUM:
+        break
     draw(GWR, args.dataset, "WR")
-    deg_wr = degrees(GWR)
+    deg_ws = degrees(GWR)
     eval(graphs, GWR)
     print("total times: %f" % (times / len(graphs)))
     del GWR
@@ -117,13 +124,15 @@ if __name__ == "__main__":
       N, M = len(graph.nodes()), len(graph.edges())
       D = max(1, int(2 * M / N))
       C = max(1, int(N / D))
-      p = 2 * M / (N * (N - 1))
+      p = 1.0
       mm_gen = MMSB(N, C, p)
       start_time = time.time()
       G = mm_gen.generate_graph()
       end_time = time.time()
       times += end_time - start_time
       GMM.append(G)
+      if len(GMM) == NUM:
+        break
     draw(GMM, args.dataset, "MM")
     deg_MM = degrees(GMM)
     eval(graphs, GMM)
@@ -147,6 +156,8 @@ if __name__ == "__main__":
       # nx.draw(G)
       # plt.show()
       # plt.close()
+      if len(GKro) == NUM:
+        break
     draw(GKro, args.dataset, "Kronecker")
     deg_kro = degrees(GKro)
     eval(graphs, GKro)
@@ -401,12 +412,7 @@ if __name__ == "__main__":
         eset = set()
         for _ in range(res_edges):
           # u, v = random_sampler(len(nlist), p=plist, size=2, replace=False)
-          while True:
-            u = asampler.sample()
-            v = asampler.sample()
-            if u != v:
-              break
-          u, v = min(u, v), max(u, v)
+          u, v = asampler.sample(2)
           eset.add((u, v))
         res_edges -= len(eset)
         cnt = min(cnt // 2, res_edges // 2)
@@ -422,6 +428,8 @@ if __name__ == "__main__":
       
       G.add_edges_from(extra_edges)
       GOurs.append(G)
+      if len(GOurs) == NUM:
+        break
     # for i, G in enumerate(GOurs):
     #   colors = ["red" if val in indice else "blue" for val in range(G.number_of_nodes())]
     #   nx.draw(G, pos=nx.shell_layout(G), node_color=colors)
@@ -436,18 +444,18 @@ if __name__ == "__main__":
 
   # degree draw
   fig, ax = plt.subplots()
-  cnt = max(len(deg_ori), len(deg_ea), len(deg_ba), len(deg_wr), len(deg_MM), len(deg_kro), len(deg_ours))
-  # cnt = max(len(deg_ori), len(deg_ea), len(deg_ba), len(deg_MM), len(deg_kro), len(deg_ours))
-  # cnt = max(len(deg_ori), len(deg_ea), len(deg_ba), len(deg_wr), len(deg_kro), len(deg_ours))
-  # cnt = max(len(deg_ori), len(deg_ea), len(deg_ba), len(deg_kro), len(deg_ours))
+  # cnt = max(len(deg_ori), len(deg_er), len(deg_ba), len(deg_ws), len(deg_MM), len(deg_kro), len(deg_ours))
+  cnt = max(len(deg_ori), len(deg_er), len(deg_ba), len(deg_MM), len(deg_kro), len(deg_ours))
+  # cnt = max(len(deg_ori), len(deg_er), len(deg_ba), len(deg_ws), len(deg_kro), len(deg_ours))
+  # cnt = max(len(deg_ori), len(deg_er), len(deg_ba), len(deg_kro), len(deg_ours))
   # deg_ori = [math.log2(x) for x in deg_ori]
   deg_ori = np.concatenate((deg_ori, np.array([0 for _ in range(cnt - len(deg_ori))])))
-  # deg_ea = [math.log2(x) for x in deg_ea]
-  deg_ea = np.concatenate((deg_ea, np.array([0 for _ in range(cnt - len(deg_ea))])))
+  # deg_er = [math.log2(x) for x in deg_er]
+  deg_er = np.concatenate((deg_er, np.array([0 for _ in range(cnt - len(deg_er))])))
   # deg_ba = [math.log2(x) for x in deg_ba]
   deg_ba = np.concatenate((deg_ba, np.array([0 for _ in range(cnt - len(deg_ba))])))
-  # deg_wr = [math.log2(x) for x in deg_wr]
-  deg_wr = np.concatenate((deg_wr, np.array([0 for _ in range(cnt - len(deg_wr))])))
+  # deg_ws = [math.log2(x) for x in deg_ws]
+  # deg_ws = np.concatenate((deg_ws, np.array([0 for _ in range(cnt - len(deg_ws))])))
   # deg_MM = [math.log2(x) for x in deg_MM]
   deg_MM = np.concatenate((deg_MM, np.array([0 for _ in range(cnt - len(deg_MM))])))
   # deg_kro = [math.log2(x) for x in deg_kro]
@@ -459,12 +467,12 @@ if __name__ == "__main__":
   x = np.arange(cnt, step=1)[:PRUNE]
   x = [math.log2(i + 2) for i in x]
   ax.plot(x, deg_ori[:PRUNE], label="real", marker='x', color="#000000")
-  ax.plot(x, deg_ea[:PRUNE], label="ER", marker='s', color="#557AA4")
-  ax.plot(x, deg_ba[:PRUNE], label="BA", marker='^', color="#86A0BE")
-  ax.plot(x, deg_wr[:PRUNE], label="WS", marker='*', color="#E39B96")
-  ax.plot(x, deg_MM[:PRUNE], label="MMSB", marker='.', color="#CED7E4")
-  ax.plot(x, deg_kro[:PRUNE], label="Kronecker", marker=',', color="#F7DEDB")
-  ax.plot(x, deg_ours[:PRUNE], label="Ours", marker='o', color="#B63D3D")
+  ax.plot(x, deg_er[:PRUNE], label="ER", marker='s', color="#004285")
+  ax.plot(x, deg_ba[:PRUNE], label="BA", marker='^', color="#C66218")
+  # ax.plot(x, deg_ws[:PRUNE], label="WS", marker='*', color="#FFBF00")
+  ax.plot(x, deg_MM[:PRUNE], label="MMSB", marker='.', color="#742883")
+  ax.plot(x, deg_kro[:PRUNE], label="Kronecker", marker=',', color="#1A7C6B")
+  ax.plot(x, deg_ours[:PRUNE], label="Ours", marker='o', color="#B6282B")
   
   ax.set_title(args.dataset)
   ax.legend(ncol=7, bbox_to_anchor=(0.8, 1.3), frameon=False)

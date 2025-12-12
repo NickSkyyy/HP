@@ -1,1 +1,7 @@
 *.sh
+__pycache__
+data
+visual
+
+eval/__pycache__
+eval/orca/tmp*
